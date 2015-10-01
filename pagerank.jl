@@ -1,4 +1,6 @@
+#
 
+### Pagerank
 
 # Compute the pagerank for: 
 # the transition matrix M
@@ -23,22 +25,20 @@ function singleIteration(M, r, β)
 	rnew + (1 - sum(rnew)) / length(r) * e
 end
 
+
+
 # edges = 2 column matrix with values from [1, number_of_pages]
 # so that _all_ values show up.
-# 
-function adjacencyMatrix(edges)
+# If [a b] is a row, then there should be an edge a → b
+function transitionMatrix(edges)
 	l = maximum(edges) 
 	N,_ = size(edges)
-	M = sparse(edges[:,1], edges[:,2], ones(N), l, l, max)
-end
-
-function edgesToMatrix(edges)
-	M = adjacencyMatrix(edges)
+	M = sparse(edges[:,2], edges[:,1], ones(N), l, l, max)
 	normalizeColumns!(M)
 end
 
-function normalizeColumns!(M)
-	# Here M should be a sparse matrix
+function normalizeColumns!(M::SparseMatrixCSC)
+# Here M should be a sparse matrix
 	vals = nonzeros(M)
 	_, c = size(M)
 	for i = 1:c
@@ -50,25 +50,23 @@ function normalizeColumns!(M)
 	M
 end
 
-function renumber(numberList) 
-	numbersappearing = [i for i in Set(numberList)]
-	Dict(zip(numbersappearing, 1:length(numbersappearing)))
+
+
+# Helper functions
+# If the set of nodes is not named from elements [1, number_of_pages]
+# then we need a correspondence between that set & and the set of 
+# names of nodes.
+
+function intLabels(nodesList) 
+	numbers = [i for i in Set(nodesList)]
+	Dict(zip(numbers, 1:length(numbers)))
 end
 
+function wrappedpagerank(data, β, ε)
+	fi = intLabels(data)
+	edges = map((x) -> fi[x], data)
+	M = transitionMatrix(edges)
+	r = pagerank(M, β, ε)
+	(Int=>Float64)[key => r[fi[key]] for key in keys(fi)]
+end
 
-
-# function normalizeColumns!(M)
-# 	(_, c) = size(M)
-# 	for i = 1:c
-# 		s = sum(M[:,i])
-# 		if s ≠ 0
-# 			M[:,i] = M[:,i] / s
-# 		end
-# 	end
-# 	M
-# end
-
-# function normalizeColumns(M)
-# 	Mnew = deepcopy(M)
-# 	normalizeColumns!(Mnew)
-# end
